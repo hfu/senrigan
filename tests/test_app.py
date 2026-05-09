@@ -14,6 +14,7 @@ class FakeImage:
 class FakeReader:
     minzoom = 1
     maxzoom = 12
+    last_tile = None
 
     def __init__(self, url: str):
         self.url = url
@@ -28,7 +29,7 @@ class FakeReader:
         return SimpleNamespace(bounds=SimpleNamespace(left=139.0, bottom=35.0, right=140.0, top=36.0))
 
     def tile(self, x: int, y: int, z: int):
-        assert (z, x, y) == (8, 227, 101)
+        type(self).last_tile = (x, y, z)
         return FakeImage()
 
 
@@ -40,7 +41,8 @@ def test_view_uses_query_parameter_only():
 
     assert response.status_code == 200
     assert "maplibre-gl" in response.text
-    assert "/tilejson.json?url=https%3A%2F%2Fexample.com%2Fa.tif" in response.text
+    assert "new URLSearchParams(window.location.search).get('url')" in response.text
+    assert "/tilejson.json?url=${encodedUrl}" in response.text
     assert response.headers["cache-control"] == "public, max-age=60"
 
 
@@ -63,6 +65,7 @@ def test_tilejson_returns_expected_payload(monkeypatch):
 
 
 def test_tiles_returns_png(monkeypatch):
+    FakeReader.last_tile = None
     monkeypatch.setattr("app.main.Reader", FakeReader)
 
     response = client.get("/tiles/8/227/101.png", params={"url": "https://example.com/a.tif"})
@@ -71,6 +74,7 @@ def test_tiles_returns_png(monkeypatch):
     assert response.headers["content-type"] == "image/png"
     assert response.headers["cache-control"] == "public, max-age=86400, s-maxage=604800"
     assert response.content == b"png-bytes"
+    assert FakeReader.last_tile == (227, 101, 8)
 
 
 def test_invalid_url_rejected():

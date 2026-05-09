@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from html import escape
 from urllib.parse import quote, urlsplit
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -90,9 +89,7 @@ def tiles(
 
 @app.get("/view", response_class=HTMLResponse)
 def view(url: str = Query(..., description="Remote GeoTIFF URL")) -> HTMLResponse:
-    remote_url = validate_remote_url(url)
-    encoded = quote(remote_url, safe="")
-    escaped_url = escape(remote_url)
+    validate_remote_url(url)
 
     html = f"""<!doctype html>
 <html lang=\"en\">
@@ -110,7 +107,12 @@ def view(url: str = Query(..., description="Remote GeoTIFF URL")) -> HTMLRespons
     <div id=\"map\"></div>
     <script src=\"https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js\"></script>
     <script>
-      const tileJsonUrl = '/tilejson.json?url={encoded}';
+      const remoteUrl = new URLSearchParams(window.location.search).get('url');
+      if (!remoteUrl) {{
+        document.body.textContent = 'Missing url query parameter';
+      }}
+      const encodedUrl = encodeURIComponent(remoteUrl || '');
+      const tileJsonUrl = `/tilejson.json?url=${{encodedUrl}}`;
       const map = new maplibregl.Map({{
         container: 'map',
         style: {{
@@ -119,8 +121,8 @@ def view(url: str = Query(..., description="Remote GeoTIFF URL")) -> HTMLRespons
             senrigan: {{
               type: 'raster',
               tileSize: 256,
-              tiles: [`/tiles/{{z}}/{{x}}/{{y}}.png?url={encoded}`],
-              attribution: 'Source: {escaped_url}'
+              tiles: [`/tiles/{{z}}/{{x}}/{{y}}.png?url=${{encodedUrl}}`],
+              attribution: 'Source: ' + (remoteUrl || '')
             }}
           }},
           layers: [{{ id: 'senrigan-raster', type: 'raster', source: 'senrigan' }}]
