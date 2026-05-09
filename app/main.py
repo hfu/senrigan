@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io import Reader
+from rasterio.warp import transform_bounds
 
 app = FastAPI(title="Senrigan", version="0.1.0")
 
@@ -23,6 +24,18 @@ def validate_remote_url(url: str) -> str:
     return url
 
 
+def bounds_to_lonlat(bounds: tuple[float, float, float, float], crs) -> list[float]:
+    if crs is None:
+        raise HTTPException(status_code=502, detail="remote GeoTIFF CRS is unavailable")
+
+    crs_string = str(crs)
+    if crs_string in {"EPSG:4326", "http://www.opengis.net/def/crs/EPSG/0/4326"}:
+        return [float(bounds[0]), float(bounds[1]), float(bounds[2]), float(bounds[3])]
+
+    left, bottom, right, top = transform_bounds(crs_string, "EPSG:4326", *bounds, densify_pts=21)
+    return [float(left), float(bottom), float(right), float(top)]
+
+
 @app.get("/tilejson.json")
 def tilejson(
     request: Request, url: str = Query(..., description="Remote GeoTIFF URL")
@@ -31,12 +44,8 @@ def tilejson(
     try:
         with Reader(remote_url) as reader:
             info = reader.info()
-            bounds = [
-                float(info.bounds.left),
-                float(info.bounds.bottom),
-                float(info.bounds.right),
-                float(info.bounds.top),
-            ]
+            bounds_value = getattr(info, "bounds", None) or getattr(reader, "bounds", None)
+            bounds = bounds_to_lonlat(bounds_value, getattr(reader, "crs", None))
             minzoom = int(getattr(reader, "minzoom", 0) or 0)
             maxzoom = int(getattr(reader, "maxzoom", 22) or 22)
     except HTTPException:

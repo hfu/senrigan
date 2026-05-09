@@ -71,8 +71,7 @@ https://senrigan.optgeo.org/tilejson.json?url=https%3A%2F%2Foin-hotosm-temp.s3.u
   "tiles": ["https://senrigan.optgeo.org/tiles/{z}/{x}/{y}.png?url=..."],
   "bounds": [-4.0, 5.0, -3.5, 5.6],
   "minzoom": 5,
-  "maxzoom": 14,
-  "center": [-3.75, 5.3, 10]
+  "maxzoom": 14
 }
 ```
 
@@ -117,11 +116,28 @@ Senrigan では **Remote GeoTIFF の指定はクエリパラメータのみ**を
 |---|---|
 | `/view` | `public, max-age=60` |
 | `/tilejson.json` | `public, s-maxage=3600, max-age=300` |
-| `/tiles/{z}/{x}/{y}.png` | `public, s-maxage=86400, max-age=3600` |
+| `/tiles/{z}/{x}/{y}.png` | `public, s-maxage=604800, max-age=86400` |
 
 - キャッシュキーは **path + query string** 全体
 - `url` パラメータが異なれば別リソースとして扱われる
 - 同一 GeoTIFF URL への同一タイルリクエストは CDN でキャッシュ可能
+
+### 元データへのアクセス負荷
+
+Senrigan は元の GeoTIFF をローカルに保存せず、リクエストごとに `rio-tiler` + GDAL の range read で必要部分だけを読みます。
+
+- `/tilejson.json` は 1 回のメタデータ参照を行う
+- `/tiles/{z}/{x}/{y}.png` は 1 タイル分だけ読み出す
+- `Cache-Control` を付けているので、CDN やブラウザに乗れば同一リクエストの再到達は減る
+- したがって、実装としては「不条理に全体を読み込む」形ではなく、オンデマンド配信として自然な負荷モデルになっている
+
+### TileJSON の座標系
+
+`tilejson.json` の `bounds` は、元データの CRS から **WGS84 経緯度** に変換して返す。
+
+- `bounds` は `[left, bottom, right, top]`
+- `minzoom` / `maxzoom` は `rio-tiler` が算出した値をそのまま採用する
+- このデータでは `maxzoom = 21` が返るが、これはネイティブ解像度に対して不自然ではない
 
 ---
 
