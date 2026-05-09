@@ -1,0 +1,15 @@
+# 千里眼 (Senrigan) — ローカル開発用 Docker Compose
+#
+# 使用方法:
+#   docker compose up
+#
+# サービス起動後:
+#   http://localhost:8080/view?url=https://oin-hotosm-temp.s3.us-east-1.amazonaws.com/...
+
+services:
+  senrigan:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      TILE_SIZE: "512"

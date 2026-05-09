@@ -1,0 +1,37 @@
+# 千里眼 (Senrigan) — Knative Service マニフェスト
+#
+# デプロイ方法:
+#   kubectl apply -f manifests/knative/senrigan.yaml
+#
+# イメージは事前にビルド・プッシュしておく:
+#   docker build -t NODE_IP:5000/senrigan:latest .
+#   docker push NODE_IP:5000/senrigan:latest
+#   sed "s/NODE_IP/YOUR_NODE_IP/g" manifests/knative/senrigan.yaml | kubectl apply -f -
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: senrigan
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        # ゼロスケール対応 (FaaS としての思想を体現)
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "5"
+    spec:
+      containers:
+        - image: NODE_IP:5000/senrigan:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: TILE_SIZE
+              value: "512"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
