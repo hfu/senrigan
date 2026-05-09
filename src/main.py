@@ -14,7 +14,6 @@ URL 設計とユーザー体験の面で発展させた後継構想。
 """
 
 import html as html_module
-import json
 import logging
 import os
 from urllib.parse import quote, unquote
@@ -182,6 +181,10 @@ _VIEWER_HTML_TEMPLATE = """\
   </style>
 </head>
 <body>
+  <!-- TileJSON URL を data 属性に格納して JS に安全に渡す -->
+  <div id="senrigan-config"
+       data-tilejson-url="{tilejson_url_escaped}"
+       hidden></div>
   <div id="loading">📡 読み込み中…</div>
   <div id="info">
     <strong>🔭 千里眼 (Senrigan)</strong><br />
@@ -191,7 +194,8 @@ _VIEWER_HTML_TEMPLATE = """\
 
   <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
   <script>
-    const TILEJSON_URL = {tilejson_url_json};
+    // TileJSON URL を DOM の data 属性から安全に取得する
+    const TILEJSON_URL = document.getElementById("senrigan-config").dataset.tilejsonUrl;
 
     fetch(TILEJSON_URL)
       .then(r => {{
@@ -324,7 +328,7 @@ def view(
     html = _VIEWER_HTML_TEMPLATE.format(
         tiff_url_escaped=html_module.escape(tiff_url, quote=True),
         tiff_url_short_escaped=html_module.escape(tiff_url_short),
-        tilejson_url_json=json.dumps(tilejson_url),
+        tilejson_url_escaped=html_module.escape(tilejson_url, quote=True),
         tile_size=TILE_SIZE,
     )
     return HTMLResponse(

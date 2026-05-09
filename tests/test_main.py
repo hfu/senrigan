@@ -143,8 +143,9 @@ class TestView:
 
     def test_contains_tiff_url_reference(self):
         r = client.get(f"/view?url={ENCODED_URL}")
-        # デコードされた URL が HTML に埋め込まれていること (HTML エスケープ済み形式)
-        assert SAMPLE_URL in r.text or "example.com%2Fsample" in r.text or "example.com/sample" in r.text
+        # data-tilejson-url 属性に tilejson URL が含まれていること
+        assert "data-tilejson-url" in r.text
+        assert "tilejson.json" in r.text
 
     def test_cache_control_header(self):
         r = client.get(f"/view?url={ENCODED_URL}")
@@ -223,8 +224,8 @@ class TestTileJSON:
         """tiles URL に元の GeoTIFF URL がエンコードされて含まれること。"""
         data = self._get().json()
         tile_url = data["tiles"][0]
-        # URL エンコードされた example.com が tiles URL に含まれること
-        assert "example.com" in tile_url or "example.com%2F" in tile_url
+        # URL エンコードされた SAMPLE_URL が tiles URL に含まれること
+        assert ENCODED_URL in tile_url
 
 
 # --------------------------------------------------------------------- #
