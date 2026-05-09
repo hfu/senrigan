@@ -46,6 +46,26 @@ def test_view_uses_query_parameter_only():
     assert response.headers["cache-control"] == "public, max-age=60"
 
 
+def test_oam_catalog_lists_view_links(monkeypatch):
+    monkeypatch.setattr(
+        "app.main.fetch_oam_meta_results",
+        lambda page=1, limit=20: [
+            {
+                "title": "Sample OAM Image",
+                "uuid": "https://oin-hotosm-temp.s3.us-east-1.amazonaws.com/sample/sample.tif",
+            }
+        ],
+    )
+
+    response = client.get("/oam-catalog")
+
+    assert response.status_code == 200
+    assert "OAM Catalog" in response.text
+    assert "/view?url=https%3A%2F%2Foin-hotosm-temp.s3.us-east-1.amazonaws.com%2Fsample%2Fsample.tif" in response.text
+    assert "Sample OAM Image" in response.text
+    assert response.headers["cache-control"] == "public, max-age=60"
+
+
 def test_tilejson_returns_expected_payload(monkeypatch):
     monkeypatch.setattr("app.main.Reader", FakeReader)
 

@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import json
+from html import escape
 from urllib.parse import quote, urlsplit
+from urllib.error import URLError
+from urllib.parse import urlencode
+from urllib.request import Request as UrlRequest, urlopen
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
@@ -13,6 +18,9 @@ app = FastAPI(title="Senrigan", version="0.1.0")
 VIEWER_CACHE_CONTROL = "public, max-age=60"
 TILEJSON_CACHE_CONTROL = "public, max-age=300, s-maxage=3600"
 TILE_CACHE_CONTROL = "public, max-age=86400, s-maxage=604800"
+OAM_META_API_URL = "https://api.openaerialmap.org/meta"
+OAM_CATALOG_DEFAULT_LIMIT = 20
+OAM_CATALOG_MAX_LIMIT = 100
 
 
 def validate_remote_url(url: str) -> str:
@@ -34,6 +42,72 @@ def bounds_to_lonlat(bounds: tuple[float, float, float, float], crs) -> list[flo
 
     left, bottom, right, top = transform_bounds(crs_string, "EPSG:4326", *bounds, densify_pts=21)
     return [float(left), float(bottom), float(right), float(top)]
+
+
+def fetch_oam_meta_results(page: int = 1, limit: int = OAM_CATALOG_DEFAULT_LIMIT) -> list[dict]:
+    params = urlencode({"page": page, "limit": limit})
+    request = UrlRequest(f"{OAM_META_API_URL}?{params}", headers={"Accept": "application/json"})
+
+    try:
+        with urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (OSError, URLError, ValueError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=502, detail=f"failed to read OAM catalog: {exc}") from exc
+
+    results = payload.get("results")
+    if not isinstance(results, list):
+        raise HTTPException(status_code=502, detail="failed to read OAM catalog: invalid response")
+    return results
+
+
+@app.get("/oam-catalog", response_class=HTMLResponse)
+def oam_catalog(
+    page: int = Query(1, ge=1, description="OAM meta API page"),
+    limit: int = Query(OAM_CATALOG_DEFAULT_LIMIT, ge=1, le=OAM_CATALOG_MAX_LIMIT, description="Number of entries to show"),
+) -> HTMLResponse:
+    results = fetch_oam_meta_results(page=page, limit=limit)
+
+    items_html: list[str] = []
+    for result in results:
+        url = result.get("uuid")
+        if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+            continue
+
+        title = str(result.get("title") or result.get("name") or url)
+        view_url = f"/view?url={quote(url, safe='')}"
+        items_html.append(
+            "<li>"
+            f'<a href="{escape(view_url, quote=True)}">{escape(title)}</a>'
+            f'<div><small>{escape(url)}</small></div>'
+            "</li>"
+        )
+
+    if items_html:
+        list_html = "<ul>" + "".join(items_html) + "</ul>"
+    else:
+        list_html = "<p>No OAM imagery found on this page.</p>"
+
+    html = f"""<!doctype html>
+<html lang=\"en\">
+  <head>
+    <meta charset=\"utf-8\" />
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+    <title>OAM Catalog - Senrigan</title>
+    <style>
+      body {{ font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; }}
+      ul {{ padding-left: 1.25rem; }}
+      li {{ margin-bottom: 1rem; }}
+      small {{ color: #555; word-break: break-all; }}
+    </style>
+  </head>
+  <body>
+    <h1>OAM Catalog</h1>
+    <p>OpenAerialMap の meta API から取得した画像一覧です。各リンクは Senrigan の viewer を開きます。</p>
+    {list_html}
+  </body>
+</html>"""
+
+    return HTMLResponse(html, headers={"Cache-Control": VIEWER_CACHE_CONTROL})
 
 
 @app.get("/tilejson.json")

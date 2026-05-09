@@ -42,9 +42,20 @@ Remote GeoTIFF をブラウザで即時閲覧するための、薄い変換レ�
 |---|---|
 | `GET /` | サービス情報 |
 | `GET /healthz` | ヘルスチェック |
+| `GET /oam-catalog` | OpenAerialMap 画像のビューアリンク一覧 |
 | `GET /view?url={tiff-url}` | MapLibre GL JS ビューア |
 | `GET /tilejson.json?url={tiff-url}` | TileJSON 3.0.0 |
 | `GET /tiles/{z}/{x}/{y}.png?url={tiff-url}` | XYZ PNG タイル |
+
+### OAM Catalog
+
+```
+https://senrigan.optgeo.org/oam-catalog
+```
+
+- OpenAerialMap の meta API から画像一覧を取得する
+- 各項目は Senrigan の `/view?url=...` へのリンクとして表示する
+- まずはシンプルな一覧表示に留めている
 
 ### ビューア
 
@@ -266,4 +277,4 @@ sed "s/NODE_IP/YOUR_NODE_IP/g" manifests/knative/senrigan.yaml | kubectl apply -
 
 ## ライセンス
 
-MIT
+CC0 1.0 Universal
