@@ -50,7 +50,6 @@ save-tile:
 
 # pytest でユニットテストを実行
 test:
-	pip install -q pytest httpx
 	pytest tests/ -v
 
 clean:

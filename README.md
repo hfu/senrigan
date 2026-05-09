@@ -136,6 +136,19 @@ Senrigan では **Remote GeoTIFF の指定はクエリパラメータのみ**を
 
 ## クイックスタート
 
+### ローカル実行 (pip)
+
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+ブラウザで開く:
+
+```text
+http://127.0.0.1:8000/view?url=https%3A%2F%2Foin-hotosm-temp.s3.us-east-1.amazonaws.com%2F690585b76415e43597ffd7ea%2F0%2F690585b76415e43597ffd7eb.tif
+```
+
 ### Docker Compose (ローカル開発)
 
 ```bash
@@ -155,9 +168,7 @@ make verify
 ### テスト実行
 
 ```bash
-make test
-# または直接:
-pip install pytest httpx
+pip install -r requirements.txt
 pytest tests/ -v
 ```
 
@@ -188,10 +199,12 @@ sed "s/NODE_IP/YOUR_NODE_IP/g" manifests/knative/senrigan.yaml | kubectl apply -
 ├── Makefile
 ├── docker-compose.yml
 ├── requirements.txt
-├── src/
+├── pytest.ini
+├── app/
+│   ├── __init__.py
 │   └── main.py              FastAPI アプリ本体
 ├── tests/
-│   └── test_main.py         pytest テストスイート
+│   └── test_app.py          pytest テストスイート
 ├── scripts/
 │   └── verify.sh            スモークテストスクリプト
 └── manifests/
@@ -203,9 +216,8 @@ sed "s/NODE_IP/YOUR_NODE_IP/g" manifests/knative/senrigan.yaml | kubectl apply -
 
 ## 環境変数
 
-| 変数名 | デフォルト | 説明 |
-|---|---|---|
-| `TILE_SIZE` | `512` | タイルサイズ (px)。512 は Retina 対応推奨値。 |
+現在、アプリケーション本体に設定可能な環境変数はありません。  
+`uvicorn` の起動オプション (`--host`, `--port`, `--workers` 等) で調整してください。
 
 ---
 
