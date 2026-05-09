@@ -40,12 +40,32 @@ Remote GeoTIFF をブラウザで即時閲覧するための、薄い変換レ�
 
 | パス | 説明 |
 |---|---|
-| `GET /` | サービス情報 |
-| `GET /healthz` | ヘルスチェック |
-| `GET /oam-catalog` | OpenAerialMap 画像のビューアリンク一覧 |
+| `GET /oam-map` | OAM クラスタマップ (MapLibre, 単一 HTML 配信) |
+| `GET /api/oam-centers?max_pages={n}&limit={m}` | OAM center points の GeoJSON (同一オリジン API) |
+| `GET /oam-catalog?page={n}&limit={m}` | OpenAerialMap 画像のビューアリンク一覧 |
 | `GET /view?url={tiff-url}` | MapLibre GL JS ビューア |
 | `GET /tilejson.json?url={tiff-url}` | TileJSON 3.0.0 |
 | `GET /tiles/{z}/{x}/{y}.png?url={tiff-url}` | XYZ PNG タイル |
+
+### OAM Map
+
+```
+https://senrigan.optgeo.org/oam-map
+```
+
+- OAM 画像の中心点をクラスタ表示するマップ
+- center points のデータ取得は `/api/oam-centers` を利用する
+- ブラウザから OAM 外部 API を直接叩かないため、CORS 制約を回避できる
+
+### OAM Centers API
+
+```
+https://senrigan.optgeo.org/api/oam-centers?max_pages=15&limit=200
+```
+
+- サーバーサイドで OAM meta API を取得し、`FeatureCollection` を返す
+- 各 `Feature` は bbox の中心点を `Point` として保持する
+- `properties` には `title`, `url`, `provider`, `platform`, `acquired`, `thumbnail` を含む
 
 ### OAM Catalog
 
@@ -55,7 +75,7 @@ https://senrigan.optgeo.org/oam-catalog
 
 - OpenAerialMap の meta API から画像一覧を取得する
 - 各項目は Senrigan の `/view?url=...` へのリンクとして表示する
-- まずはシンプルな一覧表示に留めている
+- ページングとサムネイル付きカードで表示する
 
 ### ビューア
 
@@ -125,6 +145,8 @@ Senrigan では **Remote GeoTIFF の指定はクエリパラメータのみ**を
 
 | エンドポイント | Cache-Control |
 |---|---|
+| `/oam-map` | `no-store` |
+| `/api/oam-centers` | `public, max-age=60` |
 | `/view` | `public, max-age=60` |
 | `/tilejson.json` | `public, s-maxage=3600, max-age=300` |
 | `/tiles/{z}/{x}/{y}.png` | `public, s-maxage=604800, max-age=86400` |
@@ -137,6 +159,7 @@ Senrigan では **Remote GeoTIFF の指定はクエリパラメータのみ**を
 
 Senrigan は元の GeoTIFF をローカルに保存せず、リクエストごとに `rio-tiler` + GDAL の range read で必要部分だけを読みます。
 
+- `/api/oam-centers` は OAM meta API から必要ページのみ取得し、中心点の GeoJSON を返す
 - `/tilejson.json` は 1 回のメタデータ参照を行う
 - `/tiles/{z}/{x}/{y}.png` は 1 タイル分だけ読み出す
 - `Cache-Control` を付けているので、CDN やブラウザに乗れば同一リクエストの再到達は減る

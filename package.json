@@ -1,0 +1,21 @@
+{
+  "name": "senrigan-docs-map",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "@protomaps/basemaps": "5.7.2",
+    "maplibre-gl": "5.24.0",
+    "maplibre-gl-layer-control": "0.14.1",
+    "pmtiles": "4.4.1"
+  },
+  "devDependencies": {
+    "vite": "8.0.11",
+    "vite-plugin-singlefile": "2.3.3"
+  }
+}

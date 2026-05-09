@@ -1,0 +1,224 @@
+:root {
+  --bg: #070b12;
+  --panel: rgba(10, 16, 27, 0.82);
+  --panel-border: rgba(148, 163, 184, 0.25);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --danger: #fb7185;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Avenir Next", "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+
+#app {
+  overflow: hidden;
+  position: relative;
+}
+
+#map-pane {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+#loading {
+  position: absolute;
+  left: 50%;
+  bottom: 0.85rem;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.18);
+  color: #dbeafe;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  pointer-events: none;
+}
+
+#loading.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.catalog-card {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 30;
+  border-right: 1px solid var(--panel-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  width: 20px;
+  height: 100dvh;
+  min-width: 20px;
+  max-width: calc(100% - 60px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(56, 189, 248, 0.12) 0, transparent 36%),
+    radial-gradient(circle at 92% 84%, rgba(251, 113, 133, 0.12) 0, transparent 40%),
+    rgba(8, 13, 24, 0.92);
+  padding: 1rem;
+  transition: width 280ms ease;
+}
+
+.catalog-card.is-empty {
+  width: 20px;
+  overflow: hidden;
+}
+
+.catalog-card.is-expanded {
+  width: calc(100% - 60px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.catalog-card h2 {
+  margin: 0 0 0.6rem;
+  line-height: 1.3;
+  font-size: 1.05rem;
+}
+
+.card-empty {
+  margin: 0;
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.catalog-card.is-empty .card-empty {
+  font-size: 0.86rem;
+}
+
+.card-preview-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.6rem;
+}
+
+.card-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  display: block;
+}
+
+.card-preview-btn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.6rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  backdrop-filter: blur(3px);
+}
+
+.card-preview-container:hover .card-preview-btn {
+  opacity: 1;
+}
+
+.preview-icon {
+  width: 2rem;
+  height: 2rem;
+  display: block;
+}
+
+.card-viewer {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: var(--bg);
+}
+
+.catalog-card.has-iframe {
+  width: calc(100% - 60px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.catalog-card.has-iframe > .card-viewer {
+  border-radius: 0;
+  height: 100dvh !important;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.card-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.card-grid strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.84rem;
+}
+
+.card-url {
+  margin: 0.7rem 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.maplibregl-ctrl-group {
+  border-radius: 0.7rem;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-top-right {
+  inset: 0.6rem 0.6rem auto auto;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
