@@ -13,6 +13,8 @@ URL 設計とユーザー体験の面で発展させた後継構想。
   GET /tiles/{z}/{x}/{y}.png?url={remote-tiff-url} — XYZ タイル (オンデマンド生成)
 """
 
+import html as html_module
+import json
 import logging
 import os
 from urllib.parse import quote, unquote
@@ -143,7 +145,7 @@ _VIEWER_HTML_TEMPLATE = """\
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>千里眼 — {tiff_url}</title>
+  <title>千里眼 — {tiff_url_escaped}</title>
   <link
     rel="stylesheet"
     href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css"
@@ -183,7 +185,7 @@ _VIEWER_HTML_TEMPLATE = """\
   <div id="loading">📡 読み込み中…</div>
   <div id="info">
     <strong>🔭 千里眼 (Senrigan)</strong><br />
-    <a href="{tiff_url}" target="_blank" rel="noopener">{tiff_url_short}</a>
+    <a href="{tiff_url_escaped}" target="_blank" rel="noopener">{tiff_url_short_escaped}</a>
   </div>
   <div id="map"></div>
 
@@ -316,13 +318,13 @@ def view(
     base_url = str(request.base_url).rstrip("/")
     encoded_url = quote(tiff_url, safe="")
     tilejson_url = f"{base_url}/tilejson.json?url={encoded_url}"
-    # 長い URL を表示用に省略
+    # 長い URL を表示用に省略 (HTML エスケープして XSS を防ぐ)
     tiff_url_short = tiff_url if len(tiff_url) <= 60 else tiff_url[:57] + "…"
 
     html = _VIEWER_HTML_TEMPLATE.format(
-        tiff_url=tiff_url,
-        tiff_url_short=tiff_url_short,
-        tilejson_url_json=f'"{tilejson_url}"',
+        tiff_url_escaped=html_module.escape(tiff_url, quote=True),
+        tiff_url_short_escaped=html_module.escape(tiff_url_short),
+        tilejson_url_json=json.dumps(tilejson_url),
         tile_size=TILE_SIZE,
     )
     return HTMLResponse(
